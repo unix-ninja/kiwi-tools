@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+ 
+import argparse
+import socket
+import sys
+ 
+############################################################
+# Globals
+
+## Define commands to be tested
+commands = [
+  'STATS',
+  'RTIME',
+  'LTIME',
+  'SRUN',
+  ##'TRUN',
+  'GMON',
+  'GDOG',
+  ##'KSTET',
+  ##'GTER',
+  ##'HTER',
+  'LTER',
+  'KSTAN'
+  ]
+
+delim = " "
+
+############################################################
+# Functions
+
+## Define our fuzzing function
+def fuzz(host,port):
+ 
+  ## setup our TCP stream
+  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  
+  ## check if we can connect to the host
+  try:
+    s.connect((host,int(port)))
+    r = s.recv(1024)
+    print ("[+] Host is up:")
+    print (r)
+  except:
+    ## if we can't connect...
+    print ("[-] Unable to connect to %s:%d" % (host,int(port)))
+    sys.exit(1)
+ 
+  ## create a for loop for each command we defined and set our counter up
+  for cmd in commands:
+    i = args.skip
+ 
+    ## loop until max length
+    while (i <= args.max_length):
+      junk = "A"*i
+      packet = cmd + delim + junk
+      print ("[!] Sending %d bytes to %s" % (len(junk),cmd))
+      print ("   =%s" % (packet))
+      try:
+        s.send(packet)
+        r = s.recv(1024)
+        print ("[r] %s" % (r))
+      except socket.error as e:
+        print("[-] Error: %s" % e)
+        sys.exit(2)
+      i += args.increment
+      
+############################################################
+# Parse options
+
+parser = argparse.ArgumentParser(description='simple fuzzer')
+parser.add_argument('host', help= 'target to fuzz')
+parser.add_argument('port', help='network port on target to fuzz')
+parser.add_argument('-m', '--max-length', dest='max_length', type=int, default=1000, help='set the max length of the input to fuzz (default 1000 chars)' )
+parser.add_argument('-i', dest='increment', type=int, default=100, help='set the interval to step through fuzzing length' )
+parser.add_argument('-s', '--skip', dest='skip', type=int, default=0, help='start fuzzing at length SKIP' )
+args = parser.parse_args()
+
+
+############################################################
+# Main App
+
+if __name__ == "__main__":
+  fuzz(args.host, args.port)

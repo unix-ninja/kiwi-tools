@@ -1,0 +1,7 @@
+#!/bin/sh
+
+alias grep=rg
+
+while read -r line; do
+  echo $line | grep -o 'href="[^"]+"' | grep -v 'href="#"' | grep '.*'
+done

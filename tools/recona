@@ -1,0 +1,124 @@
+#!/usr/bin/python
+
+import argparse
+import json
+import subprocess
+import threading
+import time
+import xmltodict
+from os.path import expanduser
+
+############################################################
+# Configs
+
+path = expanduser("~") + "/.nmap"
+
+http_ports = "80,280,443,488,591,593,623,631,664,706,777,808,832,873,1183,1184,2381,2688,2812,2851,3106,3128,3227,3816,4035,4036,4180,4242,4243,4848,4849,5003,5554,5800,5801,5802,5803,5938,5988,5989,5990,6443,6480,6770,6771,6788,6789,6842,7443,7627,7677,8000,8008,8080,8088,8243,8280,8333,8443,8444,8765,8910,8990,8991,9294,9295,9333,9443,9762,9929,10000,16992,16993,18333,19333,20002,20003,24680,25565,27017,27018,27019,27504,28017,62078"
+
+#skip ping test? -Pn
+
+############################################################
+# Functions
+
+def xml2json(xml):
+  xmlfile = open(xml)
+  xml_content = xmlfile.read()
+  xmlfile.close()
+  xmljson = json.dumps(xmltodict.parse(xml_content), indent=4, sort_keys=True)
+  jsondata = json.loads(xmljson)
+  return jsondata
+
+def dump_results(filename):
+  ## did the scan succeed?
+  data = xml2json(filename)
+
+  if "host" not in data['nmaprun']:
+    return False
+  ## make sure we are processing our ports as an iterable list
+  if type(data['nmaprun']['host']['ports']['port']) != list:
+    data['nmaprun']['host']['ports']['port'] = [ data['nmaprun']['host']['ports']['port'] ]
+  ## iterate through our ports
+  for p in data['nmaprun']['host']['ports']['port']:
+    if "@version" in p['service']:
+      version = p['service']['@version']
+    else:
+      version = ""
+    print("| %s/%s | %s | %s | %s %s |" % (p['@portid'],
+      p['@protocol'],
+      p['state']['@state'],
+      p['service']['@name'],
+      p['service'].get('@product', ''),
+      version))
+  return True
+
+def http_scan(filename):
+  data = xml2json(filename)
+
+  if "host" not in data['nmaprun']:
+    return False
+  ## make sure we are processing our ports as an iterable list
+  if type(data['nmaprun']['host']['ports']['port']) != list:
+    data['nmaprun']['host']['ports']['port'] = [ data['nmaprun']['host']['ports']['port'] ]
+  ## iterate through our ports
+  for p in data['nmaprun']['host']['ports']['port']:
+    if "@version" in p['service']:
+      version = p['service']['@version']
+    else:
+      version = ""
+    if p['@portid'] == 80:
+      print ("web!")
+    ## prepare out file handle for command output
+    output = open("%s/%s_dirhunt_%i" % (path, args.target, int(p['@portid'])), "w")
+    ## run our command
+    host = "http://%s:%s/" % (args.target, p['@portid'])
+    cmd="dirhunt %s --max-depth 1" % (host)
+    result = subprocess.run(cmd.split(), text=True, stdout=output)
+    ## cleanup
+    output.close()
+  return True
+
+def nmap(ports):
+  filename = "%s/%s_nmap_%i.xml" % (path, args.target, int(time.time()))
+  cmd="nmap -n -sV -sC -oX %s -T4 %s %s" % (filename, ports, args.target)
+  result = subprocess.run(cmd.split(), capture_output=True, text=True)
+  return filename
+
+############################################################
+# Parse options
+parser = argparse.ArgumentParser(description='Wrapper for nmap.')
+parser.add_argument(dest='target', help='target to scan.')
+args = parser.parse_args()
+
+############################################################
+# Main App
+
+#cmd="nmap -n -sV -sC -oX %s -T4 -p %s %s" % (filename, ports_pass1, args.target)
+
+print ("[*] Scanning...")
+print ()
+print ("| Port   | State | Service | Version                                                      |")
+print ("| ------ | ----- | ------- | ------------------------------------------------------------ |")
+
+## start elapsed time
+start = time.time()
+
+## run nmap against http ports
+filename = nmap("-p %s" % http_ports)
+if dump_results(filename):
+
+  ## launch some additional tasks in the background
+  thread = threading.Thread(target=http_scan, args=(filename,))
+  thread.start()
+
+  ## run a full scan
+  filename = nmap("-p 1-65535 --exclude-ports %s" % http_ports)
+  dump_results(filename)
+
+  thread.join()
+
+## calculate elapsed time
+end = time.time()
+hours, rem = divmod(end-start, 3600)
+minutes, seconds = divmod(rem, 60)
+print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
+
