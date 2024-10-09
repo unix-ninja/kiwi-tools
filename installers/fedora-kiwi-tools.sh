@@ -185,7 +185,7 @@ echo "[+] Exploit DB"
   $SUDO mkdir exploitdb-papers
   $SUDO chown $USER exploitdb-papers
   chmod 755 exploitdb/searchsploit
-  $sudo ln -s /usr/bin/searchsploit /usr/share/exploitdb/searchsploit
+  $SUDO ln -s /usr/share/exploitdb/searchsploit /usr/bin/searchsploit
 )
 
 echo "[+] Ncrack"
