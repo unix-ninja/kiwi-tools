@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import subprocess
 import threading
 import time
@@ -71,7 +72,7 @@ def http_scan(filename):
     output = open("%s/%s_dirhunt_%i" % (path, args.target, int(p['@portid'])), "w")
     ## run our command
     host = "http://%s:%s/" % (args.target, p['@portid'])
-    cmd="dirhunt %s --max-depth 1" % (host)
+    cmd="dirhunt %s --max-depth 1 --exclude-sources wayback" % (host)
     result = subprocess.run(cmd.split(), text=True, stdout=output)
     ## cleanup
     output.close()
@@ -79,7 +80,7 @@ def http_scan(filename):
 
 def nmap(ports):
   filename = "%s/%s_nmap_%i.xml" % (path, args.target, int(time.time()))
-  cmd="nmap -n -sV -sC -oX %s -T4 %s %s" % (filename, ports, args.target)
+  cmd="nmap -n -Pn -sV -sC -oX %s -T4 %s %s" % (filename, ports, args.target)
   result = subprocess.run(cmd.split(), capture_output=True, text=True)
   return filename
 
@@ -95,9 +96,14 @@ args = parser.parse_args()
 #cmd="nmap -n -sV -sC -oX %s -T4 -p %s %s" % (filename, ports_pass1, args.target)
 
 print ("[*] Scanning...")
+print ("[-] Wayback testing is currently disabled.")
 print ()
 print ("| Port   | State | Service | Version                                                      |")
 print ("| ------ | ----- | ------- | ------------------------------------------------------------ |")
+
+## ensure that our save path exists
+if not os.path.exists(path):
+  os.makedirs(path)
 
 ## start elapsed time
 start = time.time()
