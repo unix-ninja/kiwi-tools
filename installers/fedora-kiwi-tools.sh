@@ -85,6 +85,7 @@ $SUDO $PKG_ADD \
   jq \
   lldb \
   masscan \
+  ncrack \
   net-snmp-utils \
   nmap \
   open-vm-tools open-vm-tools-desktop \
@@ -97,6 +98,7 @@ $SUDO $PKG_ADD \
   python3-devel \
   python3-pip \
   python3-pwntools \
+  python3-xmltodict \
   ripgrep \
   ruby-devel \
   samba-common-tools \
@@ -188,14 +190,15 @@ echo "[+] Exploit DB"
   $SUDO ln -s /usr/share/exploitdb/searchsploit /usr/bin/searchsploit
 )
 
-echo "[+] Ncrack"
-(
-  git clone https://github.com/nmap/ncrack.git
-  cd ncrack
-  ./configure
-  make
-  $SUDO make install
-)
+# this is installed via dnf now
+#echo "[+] Ncrack"
+#(
+#  git clone https://github.com/nmap/ncrack.git
+#  cd ncrack
+#  ./configure
+#  make
+#  $SUDO make install
+#)
 
 echo "[+] SecLists"
 (
