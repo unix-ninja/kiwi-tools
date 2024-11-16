@@ -1,44 +1,60 @@
-import sys
+import argparse
 import socket
-from datetime import datetime
 
-ascii_banner = ("PORT SCANNER")
-print(ascii_banner)
+def scan_port(target, port):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)  # Timeout after 1 second
+        s.connect((target, port))
+        s.close()
+        return True
+    except:
+        return False
 
-# Defining a target
-if len(sys.argv) == 2:
-	
-	# translate hostname to IPv4
-	target = socket.gethostbyname(sys.argv[1])
-else:
-	print("Invalid amount of Argument")
+def port_scanner(target, port_range):
+    open_ports = []
+    for port in port_range:
+        if scan_port(target, port):
+            open_ports.append(port)
+    return open_ports
 
-# Add Banner
-print("-" * 50)
-print("Scanning Target: " + target)
-print("Scanning started at:" + str(datetime.now()))
-print("-" * 50)
+def parse_services():
+    services = []
+    with open('/etc/services', 'r') as f:
+        for line in f:
+            if not line.startswith('#'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    service_name, port_number = parts[:2]
+                    services.append((service_name, port_number))
+    return services
 
-try:
-	
-	# will scan ports between 1 to 65,535
-	#for port in range(1,65535):
-	for port in range(1,1024):
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		socket.setdefaulttimeout(1)
-		
-		# returns an error indicator
-		result = s.connect_ex((target,port))
-		if result ==0:
-			print("Port {} is open".format(port))
-		s.close()
-		
-except KeyboardInterrupt:
-		print("\n Exiting Program !!!!")
-		sys.exit()
-except socket.gaierror:
-		print("\n Hostname Could Not Be Resolved !!!!")
-		sys.exit()
-except socket.error:
-		print("\ Server not responding !!!!")
-		sys.exit()
+def get_service(port):
+    for service in services:
+        if f"{port}/tcp" == service[1]:
+          return service[0]
+    return ""
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Tiny port scanner')
+    parser.add_argument('target', type=str, help='The host to target.')
+    parser.add_argument('-p', '--ports', dest='ports', type=str, default="1-10000", help='Port range to scan.')
+    args = parser.parse_args()
+
+    ports = args.ports.split("-")
+    start_port = int(ports[0]) or 1
+    if len(ports) > 1:
+      end_port = int(ports[1]) or 65535
+    else:
+      end_port = start_port
+
+    open_ports = port_scanner(args.target, range(start_port, end_port + 1))
+
+    print("| Port | Service |")
+    print("| ---- | ------- |")
+
+    if open_ports:
+        services = parse_services()
+        for port in open_ports:
+            service = get_service(port)
+            print(f"| {port}/tcp | {service} |")

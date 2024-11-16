@@ -1,0 +1,121 @@
+#!/usr/bin/python3
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+from sys import exit
+
+########################################
+# Configs
+
+session = {
+  'dns': '',
+  'host': '',
+  'path': os.path.expanduser("~/Documents/HTB")
+	}
+
+htbrc = os.path.expanduser("~/.htbrc")
+screenshots = os.path.expanduser("~/Pictures/Screenshots")
+
+########################################
+# Functions
+
+def cmd_dns():
+  print(f"[+] Updating DNS ...")
+
+  # add our new DNS to the session
+  new_dns = session['dns']
+  for host in args.host:
+    new_dns += f" {host}"
+
+  # make sure domains are unique
+  tokens = new_dns.split()
+  A = tokens.pop(0)
+  tokens = set(sorted(tokens))
+  new_dns = A+'   '+' '.join(tokens)
+
+  # now update our hosts file
+  command = f"sudo sed -i '/{session['dns']}/d' /etc/hosts;"
+  command += f"echo '{new_dns}' | sudo tee -a /etc/hosts"
+  subprocess.run(command, shell=True)
+  session['dns'] = new_dns
+
+def cmd_img():
+  print(f"[+] Moving screenshots ...")
+  for screenshot in os.listdir(screenshots):
+    if screenshot.startswith("screenshot_"):
+      print(f" - {screenshot}")
+      shutil.move(f"{screenshots}/{screenshot}", f"{session['path']}/{session['host']}.htb/assets/")
+      with open(f"{session['path']}/{session['host']}.htb/{session['host']}.md", 'a') as f:
+        f.write(f"\n![]({session['path']}/{session['host']}.htb/assets/{screenshot})\n")
+      f.close()
+
+def cmd_show():
+  print(f"[+] Active session:")
+  print(f"    host: {session['host']}")
+
+def cmd_new():
+  if args.host.endswith(".htb"):
+        args.host = args.host[:-4]
+  print(f"[+] Creating new session for {args.host}.htb ...")
+  session['host'] = args.host
+  if not os.path.exists(f"{args.host}.htb"):
+    os.mkdir(f"{args.host}.htb")
+    os.mkdir(f"{args.host}.htb/assets")
+    shutil.copy("template.md", f"{args.host}.htb/{args.host}.md")
+
+	# update dns
+  if args.ip:
+    session['dns'] = f"{args.ip}   {args.host}.htb"
+    command = f"echo '{session['dns']}' | sudo tee -a /etc/hosts"
+    subprocess.run(command, shell=True)
+
+########################################
+# Entry
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Process a task.')
+  subparsers = parser.add_subparsers(dest='command', help='The command to perform.')
+
+  parser_new = subparsers.add_parser('new', help='Setup a new HTB attack session.')
+  parser_new.add_argument('host', type=str, help='The host to target.')
+  parser_new.add_argument('ip', type=str, nargs='?', help='Optional IP address')
+  parser_new.set_defaults(func=cmd_new)
+
+  parser_clean = subparsers.add_parser('clean', help='Remove the active session.')
+
+  parser_dns = subparsers.add_parser('dns', help='Add a new entry to hosts.')
+  parser_dns.add_argument('host', type=str, nargs='+', help='One or more host names to add to DNS')
+  parser_dns.set_defaults(func=cmd_dns)
+
+  parser_dns = subparsers.add_parser('img', help='Add screenshots to session assets.')
+  parser_dns.set_defaults(func=cmd_img)
+
+  parser_show = subparsers.add_parser('show', help='Show active session information.')
+  parser_show.set_defaults(func=cmd_show)
+
+  args = parser.parse_args()
+
+  # make sure we are in the right working path
+  os.chdir(session['path'])
+
+  if args.command:
+    if args.command == "clean":
+      if os.path.exists(htbrc):
+        os.remove(htbrc)
+      exit(0)
+    if args.command != "new":
+      # if we aren't setting a new session, load the old one
+      with open(htbrc, 'r') as f:
+        session = json.load(f)
+      f.close()
+    args.func()
+  else:
+    parser.print_help()
+  
+	# save our session state in case we want it later
+  with open(htbrc, 'w') as f:
+    json.dump(session, f)
+  f.close()

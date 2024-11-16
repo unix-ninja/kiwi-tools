@@ -1,0 +1,82 @@
+#!/bin/bash
+
+network_addr=
+broadcast_addr=
+
+function cidr_to_range() {
+  local cidr="$1"
+  local ipaddr
+  local cidr_bits
+  local netmask
+
+  # Extract IP address and CIDR bits
+  IFS="/" read -r ipaddr cidr_bits <<< "$cidr"
+
+  # Split IP address into octets
+  IFS=. read -r ip1 ip2 ip3 ip4 <<< "$ipaddr"
+
+  # Convert octets to integers
+  ip_int=$(( (ip1 << 24) | (ip2 << 16) | (ip3 << 8) | ip4 ))
+
+  # Calculate netmask (POSIX compatible)
+  netmask=$(( (1<<32) - (1<< (32-cidr_bits)) ))
+
+  # Calculate network and broadcast addresses
+  network_addr=$((ip_int & netmask))
+  broadcast_addr=$((network_addr | (~netmask)))
+  # Convert network and broadcast addresses back to dotted-decimal notation
+  network_addr=$(printf "%d.%d.%d.%d" \
+    $((network_addr >> 24 & 0xFF)) \
+    $((network_addr >> 16 & 0xFF)) \
+    $((network_addr >> 8 & 0xFF)) \
+    $((network_addr & 0xFF)))
+  broadcast_addr=$(printf "%d.%d.%d.%d" \
+    $((broadcast_addr >> 24 & 0xFF)) \
+    $((broadcast_addr >> 16 & 0xFF)) \
+    $((broadcast_addr >> 8 & 0xFF)) \
+    $((broadcast_addr & 0xFF)))
+}
+
+function ping_host() {
+  local host="$1"
+  ping -f -i 0.002 -s 0 -w 1 -c 2 "$host" > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "$host is up"
+  fi
+}
+
+function iterate_ip_range() {
+  local start_ip="$1"
+  local end_ip="$2"
+
+  # Split start and end IP addresses into octets
+  IFS=. read -r start_ip1 start_ip2 start_ip3 start_ip4 <<< "$start_ip"
+  IFS=. read -r end_ip1 end_ip2 end_ip3 end_ip4 <<< "$end_ip"
+
+  # Convert octets to integers
+  start_ip_int=$(( (start_ip1 << 24) | (start_ip2 << 16) | (start_ip3 << 8) | start_ip4 ))
+  end_ip_int=$(( (end_ip1 << 24) | (end_ip2 << 16) | (end_ip3 << 8) | end_ip4 ))
+
+  # Iterate through IP addresses
+  for ip_int in $(seq $start_ip_int $end_ip_int); do
+    # Convert integer IP back to dotted-decimal notation
+    ip_addr=$(printf "%d.%d.%d.%d\n" \
+      $((ip_int >> 24 & 0xFF)) \
+      $((ip_int >> 16 & 0xFF)) \
+      $((ip_int >> 8 & 0xFF)) \
+      $((ip_int & 0xFF)))
+
+    # Do something with the IP address, e.g., print it
+    #echo "$ip_addr"
+    ping_host "$ip_addr"
+  done
+}
+
+# Example usage:
+cidr_to_range $1
+
+echo Scanning "$network_addr" - "$broadcast_addr" ...
+
+# Example usage:
+time iterate_ip_range "$network_addr" "$broadcast_addr"
+

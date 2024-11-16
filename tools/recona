@@ -14,6 +14,8 @@ from os.path import expanduser
 
 path = expanduser("~") + "/.nmap"
 
+dictionary = ""
+
 http_ports = "80,280,443,488,591,593,623,631,664,706,777,808,832,873,1183,1184,2381,2688,2812,2851,3106,3128,3227,3816,4035,4036,4180,4242,4243,4848,4849,5003,5554,5800,5801,5802,5803,5938,5988,5989,5990,6443,6480,6770,6771,6788,6789,6842,7443,7627,7677,8000,8008,8080,8088,8243,8280,8333,8443,8444,8765,8910,8990,8991,9294,9295,9333,9443,9762,9929,10000,16992,16993,18333,19333,20002,20003,24680,25565,27017,27018,27019,27504,28017,62078"
 
 #skip ping test? -Pn
@@ -34,6 +36,9 @@ def dump_results(filename):
   data = xml2json(filename)
 
   if "host" not in data['nmaprun']:
+    return False
+  ## ensure we have found ports
+  if "port" not in data['nmaprun']['host']['ports'].keys():
     return False
   ## make sure we are processing our ports as an iterable list
   if type(data['nmaprun']['host']['ports']['port']) != list:
@@ -68,6 +73,7 @@ def http_scan(filename):
       version = ""
     if p['@portid'] == 80:
       print ("web!")
+      subhunter(args.target)
     ## prepare out file handle for command output
     output = open("%s/%s_dirhunt_%i" % (path, args.target, int(p['@portid'])), "w")
     ## run our command
@@ -77,6 +83,12 @@ def http_scan(filename):
     ## cleanup
     output.close()
   return True
+
+def subhunter(host):
+  if dictionary:
+    print (f"[*] checking for sub-domains of {host}...")
+    cmd="ffuf -w %s -h 'Host: FUZZ.%s' http://%s" % (dictinary, host, host)
+    result = subprocess.run(cmd.split(), capture_output=True, text=True)
 
 def nmap(ports):
   filename = "%s/%s_nmap_%i.xml" % (path, args.target, int(time.time()))
