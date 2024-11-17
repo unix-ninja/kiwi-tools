@@ -1,5 +1,9 @@
+#!/usr/bin/python3
+
 import argparse
+from itertools import chain
 import socket
+import sys
 
 def scan_port(target, port):
     try:
@@ -41,18 +45,25 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--ports', dest='ports', type=str, default="1-10000", help='Port range to scan.')
     args = parser.parse_args()
 
-    ports = args.ports.split("-")
-    start_port = int(ports[0]) or 1
-    if len(ports) > 1:
-      end_port = int(ports[1]) or 65535
-    else:
-      end_port = start_port
+    # let's expand our port ranges
+    ranges = args.ports.split(",")
+    port_range = range(1,1)
+    for r in ranges:
+        ports = r.split("-")
+        start_port = int(ports[0]) or 1
+        if len(ports) > 1:
+            end_port = int(ports[1]) or 65535
+        else:
+            end_port = start_port
+        port_range = chain(port_range, range(start_port, end_port + 1))
 
-    open_ports = port_scanner(args.target, range(start_port, end_port + 1))
+    # now scan our target
+    open_ports = port_scanner(args.target, port_range)
 
     print("| Port | Service |")
     print("| ---- | ------- |")
 
+    # display our results
     if open_ports:
         services = parse_services()
         for port in open_ports:
