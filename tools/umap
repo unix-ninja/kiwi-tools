@@ -40,9 +40,9 @@ def get_service(port):
     return ""
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Tiny port scanner')
+    parser = argparse.ArgumentParser(description='A tiny port scanner')
     parser.add_argument('target', type=str, help='The host to target.')
-    parser.add_argument('-p', '--ports', dest='ports', type=str, default="1-10000", help='Port range to scan.')
+    parser.add_argument('-p', '--ports', dest='ports', type=str, default="1-10000", help='Port range to scan. Use a dash to specify start and end ranges. Uses commas to separate multiple ranges.')
     args = parser.parse_args()
 
     # let's expand our port ranges
