@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import socket
 from sys import exit
 
 ########################################
@@ -22,18 +23,42 @@ screenshots = os.path.expanduser("~/Pictures/Screenshots")
 ########################################
 # Functions
 
+# Function to check for valid IP address format
+def is_valid_ip(ip):
+  try:
+    socket.inet_pton(socket.AF_INET, ip)  # Attempt to convert to IPv4 address
+    return True
+  except (socket.error, ValueError):
+    try:
+      socket.inet_pton(socket.AF_INET6, ip)  # Attempt to convert to IPv6 address
+      return True
+    except (socket.error, ValueError):
+      return False
+
 def cmd_dns():
   print(f"[+] Updating DNS ...")
 
-  # add our new DNS to the session
+  # copy of session for modification
   new_dns = session['dns']
-  for host in args.host:
-    new_dns += f" {host}"
+
+  A = None
+  # if we have an IP address, replace the existing IP for our target
+  if len(args.host)==1 and is_valid_ip(args.host[0]):
+    A = args.host[0]
+  else:
+    # add domains to the draft
+    for host in args.host:
+      new_dns += f" {host}"
 
   # make sure domains are unique
   tokens = new_dns.split()
-  A = tokens.pop(0)
+  if A:
+    tokens.pop(0)
+  else:
+    A = tokens.pop(0)
   tokens = set(sorted(tokens))
+
+  # draft new dns
   new_dns = A+'   '+' '.join(tokens)
 
   # now update our hosts file
@@ -46,7 +71,7 @@ def cmd_img():
   print(f"[+] Moving screenshots ...")
   for screenshot in os.listdir(screenshots):
     if screenshot.startswith("screenshot_"):
-      print(f" - {screenshot}")
+      print(f" -  {screenshot}")
       shutil.move(f"{screenshots}/{screenshot}", f"{session['path']}/{session['host']}.htb/assets/")
       with open(f"{session['path']}/{session['host']}.htb/{session['host']}.md", 'a') as f:
         f.write(f"\n![]({session['path']}/{session['host']}.htb/assets/{screenshot})\n")
@@ -87,7 +112,7 @@ if __name__ == '__main__':
   parser_clean = subparsers.add_parser('clean', help='Remove the active session.')
 
   parser_dns = subparsers.add_parser('dns', help='Add a new entry to hosts.')
-  parser_dns.add_argument('host', type=str, nargs='+', help='One or more host names to add to DNS')
+  parser_dns.add_argument('host', type=str, nargs='+', help='One or more host names to add to DNS. If you specify an IP by itself, it will replace the existing IP address.')
   parser_dns.set_defaults(func=cmd_dns)
 
   parser_dns = subparsers.add_parser('img', help='Add screenshots to session assets.')
