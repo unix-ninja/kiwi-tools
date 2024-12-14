@@ -52,17 +52,22 @@ def cmd_dns():
 
   # make sure domains are unique
   tokens = new_dns.split()
-  if A:
-    tokens.pop(0)
+  if len(tokens) > 1:
+    print (len(tokens))
+    if A:
+      tokens.pop(0)
+    else:
+      A = tokens.pop(0)
+    tokens = set(sorted(tokens))
   else:
-    A = tokens.pop(0)
-  tokens = set(sorted(tokens))
+    tokens = [f"{session['host']}.htb"]
 
   # draft new dns
   new_dns = A+'   '+' '.join(tokens)
 
-  # now update our hosts file
+  # remove previous dns
   command = f"sudo sed -i '/{session['dns']}/d' /etc/hosts;"
+  # now update our hosts file
   command += f"echo '{new_dns}' | sudo tee -a /etc/hosts"
   subprocess.run(command, shell=True)
   session['dns'] = new_dns
@@ -80,6 +85,17 @@ def cmd_img():
 def cmd_show():
   print(f"[+] Active session:")
   print(f"    host: {session['host']}")
+  print(f"    dns: {session['dns']}")
+  print(f"[+] Firewall status:")
+  try:
+    output = subprocess.check_output(
+        ["sudo", "firewall-cmd", "--list-all"], 
+        text=True
+    ).strip()
+    filtered_output = "\n".join(line for line in output.splitlines() if any(word in line for word in ("services", "ports", "protocols")))
+    print(filtered_output)
+  except subprocess.CalledProcessError as e:
+    print(f"Error executing command: {e}") 
 
 def cmd_new():
   if args.host.endswith(".htb"):
@@ -90,8 +106,18 @@ def cmd_new():
     os.mkdir(f"{args.host}.htb")
     os.mkdir(f"{args.host}.htb/assets")
     shutil.copy("template.md", f"{args.host}.htb/{args.host}.md")
+    try:
+    with open(f"{args.host}.htb/{args.host}.md", 'w') as f:
+        content = f.read()
+        content = content.replace("Name", session['host'])
+        f.seek(0)  # Move the file pointer to the beginning
+        f.truncate(0)  # Clear the existing content
+        f.write(content)
+        f.close()
+    except Exception as e:
+      print(f"An error occurred: {e}")
 
-	# update dns
+  # update dns
   if args.ip:
     session['dns'] = f"{args.ip}   {args.host}.htb"
     command = f"echo '{session['dns']}' | sudo tee -a /etc/hosts"
