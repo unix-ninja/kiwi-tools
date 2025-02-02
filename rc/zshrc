@@ -1,0 +1,103 @@
+# Lines configured by zsh-newuser-install
+export HISTFILE=~/.histfile
+export HISTSIZE=10000
+export SAVEHIST=10000
+export PATH=${PATH}:${HOME}/.local/bin
+#export TERM=vt100
+export TERM=screen-256color
+
+unsetopt notify
+setopt appendhistory
+setopt interactivecomments
+bindkey -v
+# End of lines configured by zsh-newuser-install
+# The following lines were added by compinstall
+zstyle :compinstall filename "$HOME/.zshrc"
+
+autoload -Uz compinit
+compinit
+# End of lines added by compinstall
+
+## aliases
+alias ll='ls -lG'
+alias -- ++='sudo '
+alias tR='tr A-Z a-z'
+alias ip='ip --color=always'
+alias grep='rg'
+alias vihosts='sudo vi /etc/hosts'
+alias pc='pwncat'
+alias ssh-pub="cat $HOME/.ssh/evil.pub"
+alias ssh-evil="ssh -i ~/.ssh/evil"
+alias scp-evil="scp -i ~/.ssh/evil"
+alias rsh='nc -nvlp 4444'
+alias fw='sudo firewall-cmd'
+alias pygo='source .venv/bin/activate'
+
+## functions
+## toggle PS1 prompts
+function d ()
+{
+  _PS1=':: '
+  PROMPTS=(
+#  $_PS1
+  '[%d/] '$'\n'$_PS1
+  '[%1d] '$'\n'$_PS1
+  )
+
+  for i in {1..${#PROMPTS}}; do
+    if [ "${PS1}" = "${PROMPTS[$i]}" ]; then
+      if [ "$i" -lt "${#PROMPTS}" ]; then
+        export PS1="${PROMPTS[$(( i + 1))]}"
+      else
+        export PS1="${PROMPTS[1]}"
+      fi
+      return
+    fi
+  done
+
+  export PS1="${PROMPTS[1]}"
+}
+
+#function mkpasswd ()
+#{
+#  LEN=${1-72}
+#  head /dev/urandom | base64 | cut -c1-${LEN}
+#}
+
+function gcol ()
+{
+  cols=
+  for param in $@; do
+    if [[ $param =~ [^0-9] ]]; then
+      p1=$(echo $param | cut -d- -f1)
+      p2=$(echo $param | cut -d- -f2)
+      param=$(eval echo {$p1..$p2})
+    fi
+    for p in $param; do
+      if [ ! -z "$cols" ]; then cols=$cols,; fi
+      cols=$cols\$$p
+    done
+  done
+  awk '{ print '$cols' }' | column -t
+}
+
+function rl ()
+{
+if [ -z $1 ]; then
+        echo "  Usage: rl <linenumber> <filename>"
+        echo
+  return
+fi
+FILE=$2
+if [ -z $2 ]; then
+  FILE=~/.ssh/known_hosts
+fi
+        awk "NR == $1" $FILE
+  sed -i '' $1d $FILE
+}
+
+# set initial PS1
+d
+
+# set our window title
+echo -en "\e]0;zsh\a"

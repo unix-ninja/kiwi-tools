@@ -1,0 +1,15 @@
+syntax on
+set hlsearch
+set autoindent
+set expandtab
+set tabstop=2
+set shiftwidth=2
+
+set modelines=0     " CVE-2007-2438
+set pastetoggle=<F2>
+
+set visualbell
+set paste
+
+"au BufNewFile,BufRead,BufReadPost *.cl set syntax=c
+

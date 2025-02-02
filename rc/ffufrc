@@ -1,0 +1,4 @@
+[input]
+    wordlists = [
+      "/usr/local/share/wordlists/dirb/common.txt:FUZZ"
+    ]
