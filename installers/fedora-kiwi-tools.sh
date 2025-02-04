@@ -71,7 +71,6 @@ echo "           '    \      ;"
 echo '              __|`--\,/     -Offensive Security-'
 echo '               /\    |         <system setup>'
 echo '                    ~|~'
-exit
 
 ## Let's set up our Fedora system!
 
