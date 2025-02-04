@@ -1,5 +1,6 @@
 #!/bin/bash
 ################################################################################
+## Install on Fedora 41
 
 ## always break on errors
 set -e
@@ -56,6 +57,22 @@ if [ "$RESUME" -gt 0 ]; then
 fi
 
 ################################################################################
+## Make sure we are running Fedora 41
+if [ $(rpm -E %fedora) -lt 41 ]; then
+  echo "Error: Not running Fedora 41 or greater. Bailing..."
+  exit
+fi
+
+echo '              ,--.,--.'
+echo '             (  . \   \'
+echo '             //_   `   |'
+echo "            /' |       |"
+echo "           '    \      ;"
+echo '              __|`--\,/     -Offensive Security-'
+echo '               /\    |         <system setup>'
+echo '                    ~|~'
+exit
+
 ## Let's set up our Fedora system!
 
 echo '[+] bye nano!'
@@ -67,7 +84,7 @@ $SUDO chsh -s $(which zsh) $(whoami)
 
 echo "[+] DNF packages"
 ## install development packages
-$SUDO dnf groupinstall "Development Tools" -y
+$SUDO dnf group install "development-tools" -y
 
 ## install some basic packages
 $SUDO $PKG_ADD \
@@ -108,6 +125,14 @@ $SUDO $PKG_ADD \
   neovim \
   wireshark
 
+###### Set Neovim configs ######
+mkdir $HOME/.config/nvim
+cat <<EOF>> $HOME/.config/nvim/init.vim
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath=&runtimepath
+source ~/.vimrc
+EOF
+
 ###### Update Ruby gems ######
 $SUDO gem update --system
 
@@ -120,13 +145,12 @@ cd Dev
 
 echo "[+] kiwi tools"
 (
-  git clone https://github.com/unix-ninja/kiwi-tools.git
-  mv kiwi-tools/tools $HOME/
-  mv kiwi-tools/rc/ffufrc $HOME/.ffufrc
-  mv kiwi-tools/rc/vimrc $HOME/.vimrc
-  mv kiwi-tools/rc/zshrc $HOME/.zshrc
-  ## clean up
-  rm -rf kiwi-tools
+  if [ ! -d kiwi-tools ]; then
+    git clone https://github.com/unix-ninja/kiwi-tools.git
+  fi
+  cp kiwi-tools/rc/ffufrc $HOME/.ffufrc
+  cp kiwi-tools/rc/vimrc $HOME/.vimrc
+  cp kiwi-tools/rc/zshrc $HOME/.zshrc
 )
 
 echo "[+] cream"
@@ -227,7 +251,6 @@ echo "[+] ssti-payload"
 
 echo "[+] webshells"
 (
-  cd $HOME/tools
   git clone https://github.com/BlackArch/webshells.git
 )
 
@@ -254,4 +277,4 @@ echo "[+] wpscan"
 
 # open incoming 4444/tcp
 #iptables -I INPUT -p tcp --dport 4444 -j ACCEPT
-$SUDO firewall-cmd --add-port=4444/tcp --permanent
+#$SUDO firewall-cmd --add-port=4444/tcp --permanent
