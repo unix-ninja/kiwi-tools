@@ -1,0 +1,10 @@
+#!/bin/sh
+
+CPATH=$HOME/.config/vpn
+CONFIG=lab
+
+if [ "$1" ]; then
+  echo $1
+fi
+
+sudo openvpn ${CPATH}/${CONFIG}*

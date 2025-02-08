@@ -159,6 +159,11 @@ echo "[+] cream"
   make
 )
 
+echo "[+] dirhunt"
+(
+  pip install dirhunt
+)
+
 echo "[+] enum4linux"
 (
   git clone https://github.com/CiscoCXSecurity/enum4linux.git
