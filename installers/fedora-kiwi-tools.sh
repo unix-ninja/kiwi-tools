@@ -182,6 +182,7 @@ echo "[+] ffuf"
   cd ffuf
   go get
   go build
+  mv ffuf $HOME/.local/bin/
 )
 
 echo "[+] impacket"
