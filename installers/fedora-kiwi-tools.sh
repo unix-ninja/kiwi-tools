@@ -121,6 +121,7 @@ $SUDO $PKG_ADD \
   snmpcheck \
   socat \
   stunnel \
+  sqlite3 \
   neovim \
   wireshark
 
