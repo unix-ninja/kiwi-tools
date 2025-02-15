@@ -4,7 +4,15 @@ CPATH=$HOME/.config/vpn
 CONFIG=lab
 
 if [ "$1" ]; then
-  echo $1
+  if [ "$1" = "--list" ]; then
+    basename -a ${CPATH}/*
+    exit
+  else
+    CONFIG=$1
+  fi
 fi
 
-sudo openvpn ${CPATH}/${CONFIG}*
+FILE=$(echo ${CPATH}/*${CONFIG}*| head -n1)
+
+echo "Connecting to $(basename ${FILE}) ..."
+sudo openvpn ${FILE}
