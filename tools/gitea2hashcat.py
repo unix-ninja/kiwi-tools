@@ -25,13 +25,11 @@ def convert_hash(hash_string):
       print(f"[-] Invalid hex input: {hash_string}")
       return None
 
-    if len(bytes1) < len(bytes2):
-        salt_bytes = bytes1
-        hash_bytes = bytes2
-    elif len(bytes1) > len(bytes2):
+    # If lengths are equal, we will maintain the original order
+    if len(bytes1) > len(bytes2):
         salt_bytes = bytes2
         hash_bytes = bytes1
-    else:  # If lengths are equal, maintain original order (or you could enforce a lexicographical order)
+    else:  
         salt_bytes = bytes1
         hash_bytes = bytes2
 
