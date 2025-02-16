@@ -44,11 +44,12 @@ def convert_hash(hash_string):
 
 def main():
     parser = argparse.ArgumentParser(description="Convert Gitea SALT+HASH strings to a hashcat-compatible format.",
-        epilog="""Example: gitea2hashcat.py <salt1>:<hash1> <hash2>|<salt2> ... or pipe input from stdin.
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""Example:
+    gitea2hashcat.py <salt1>:<hash1> <hash2>|<salt2> ... or pipe input from stdin.
         
-        You can also dump output straight from sqlite into this script:
-            sqlite3 gitea.db 'select salt,passwd from user;' | gitea2hashcat.py
-        """)
+    You can also dump output straight from sqlite into this script:
+        sqlite3 gitea.db 'select salt,passwd from user;' | gitea2hashcat.py""")
     parser.add_argument('hashes', nargs='*', help='SALT+HASH strings to convert')
     args = parser.parse_args()
 
