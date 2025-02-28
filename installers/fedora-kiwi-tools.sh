@@ -118,6 +118,7 @@ $SUDO $PKG_ADD \
   ripgrep \
   ruby-devel \
   samba-common-tools \
+  samba-client \
   snmpcheck \
   socat \
   stunnel \
@@ -276,6 +277,26 @@ echo "[+] Wordlists"
 echo "[+] wpscan"
 (
   gem install wpscan
+)
+
+echo "[+] xlsx2csv"
+(
+  pip install xlsx2csv
+)
+
+################################################################################
+## Install Windows Tools
+
+echo "[+] evil-winrm"
+(
+  gem install evil-winrm
+)
+
+echo "[+] microsoft ad tools"
+(
+  pip install pywhisker
+  pip install certipy-ad
+  git clone https://github.com/dirkjanm/PKINITtools.git
 )
 
 ################################################################################

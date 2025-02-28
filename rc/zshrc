@@ -2,7 +2,7 @@
 export HISTFILE=~/.histfile
 export HISTSIZE=10000
 export SAVEHIST=10000
-export PATH=${PATH}:${HOME}/.local/bin
+export PATH=${PATH}:${HOME}/.local/bin:${HOME}/Dev/kiwi-tools/tools
 #export TERM=vt100
 export TERM=screen-256color
 
@@ -32,12 +32,15 @@ alias scp-evil="scp -i ~/.ssh/evil"
 alias rsh='nc -nvlp 4444'
 alias fw='sudo firewall-cmd'
 alias pygo='source .venv/bin/activate'
+alias pynew='python3 -m venv .venv'
+alias tmux='tmux -CC'
+alias sqlmap='/home/c/Dev/sqlmap/sqlmap.py'
 
 ## functions
 ## toggle PS1 prompts
 function d ()
 {
-  _PS1=':: '
+  _PS1=$'\e[0;32mkiwi\e[0m :: '
   PROMPTS=(
 #  $_PS1
   '[%d/] '$'\n'$_PS1
